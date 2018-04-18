@@ -26,4 +26,25 @@ class Honeypot {
             print ($ex->getMessage());
         }
     }
+    
+    public function CheckLog() {
+        try {
+            $stmt = $this->db->prepare('SELECT ip,count(*) as hits FROM `honeypot_log` WHERE error_time > date_add(CURRENT_TIMESTAMP, INTERVAL ? minute) GROUP by ip');
+            $minutes = 0 - CHECK_MINUTES;
+            $stmt->execute(array($minutes));
+            print "<li>executed";
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                if ($row['hits'] > BAN_THRESHOLD) {
+                    $this->BanIP($row['ip']);
+                }
+            }
+        } catch (PDOException $ex) {
+            print $ex->getMessage();
+        }
+        
+    }
+
+    private function BanIP($ip) {
+        print "<li>it";
+    }
 }
