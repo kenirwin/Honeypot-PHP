@@ -45,6 +45,17 @@ class Honeypot {
     }
 
     private function BanIP($ip) {
+        // INSERT INTO `honeypot_ips` COLUMNS(ip,location,ban_date) VALUES(?,?,?) ON DUPLICATE KEY IGNORE;
         print "<li>it";
+    }
+
+
+    public function PurgeLog() {
+        try {
+            $stmt = $this->db->query('DELETE FROM `honeypot_log` WHERE DATE(error_time) = DATE(NOW() - INTERVAL 1 DAY)');
+            print "<li>Yestday's Log DELETED</li>";
+        } catch (PDOException $ex) { 
+            print $ex->getMessage();
+        }
     }
 }
