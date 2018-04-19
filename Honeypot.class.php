@@ -32,7 +32,6 @@ class Honeypot {
             $stmt = $this->db->prepare('SELECT ip,count(*) as hits FROM `honeypot_log` WHERE error_time > date_add(CURRENT_TIMESTAMP, INTERVAL ? minute) GROUP by ip');
             $minutes = 0 - CHECK_MINUTES;
             $stmt->execute(array($minutes));
-            print "<li>executed";
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 if ($row['hits'] > BAN_THRESHOLD) {
                     $this->BanIP($row['ip']);
@@ -45,8 +44,15 @@ class Honeypot {
     }
 
     private function BanIP($ip) {
-        // INSERT INTO `honeypot_ips` COLUMNS(ip,location,ban_date) VALUES(?,?,?) ON DUPLICATE KEY IGNORE;
-        print "<li>it";
+        try { 
+            $stmt = $this->db->prepare('INSERT INTO `honeypot_ips` (ip,location,ban_date) VALUES(?,?,?) ON DUPLICATE KEY UPDATE `ban_date` = ?');
+            $location = gethostbyaddr($ip);
+            $date = date('Y-m-d');
+            $stmt->execute(array($ip,$location,$date,$date));
+            print "<li>Added IP $ip to Banned list";
+        } catch (PDOException $ex) {
+            print $ex->getMessage();
+        }
     }
 
 
