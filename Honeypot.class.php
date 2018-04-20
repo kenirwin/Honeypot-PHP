@@ -43,13 +43,13 @@ class Honeypot {
             }
 
             $query = "SELECT ".$iprange.",count(*) as hits FROM `honeypot_log` WHERE error_time > date_add(CURRENT_TIMESTAMP, INTERVAL ? minute) GROUP by iprange";
-            print "<li>$query</li>";
             $stmt = $this->db->prepare($query);
             $minutes = 0 - CHECK_MINUTES;
             $stmt->execute(array($minutes));
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 if ($row['hits'] > BAN_THRESHOLD) {
                     $this->BanIP($row['IPrange']);
+                    $this->UpdateBlacklist();
                 }
             }
         } catch (PDOException $ex) {
@@ -69,6 +69,19 @@ class Honeypot {
         }
     }
 
+    private function UpdateBlacklist() {
+        try { 
+            $stmt = $this->db->query('SELECT * FROM honeypot_ips');
+            $list = '';
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $list .= $row['ip']."\tdeny\n";
+            }
+            $file = fopen(BLACKLIST, 'w');
+            fwrite($file, $list) || print 'Could not write to Blacklist file';
+        } catch (PDOExpception $ex) {
+            print '<li>'.$ex->getMessage().' in '.$ex->getFile().' on line '.$ex->getLine().'</li>';
+        }
+    }
 
     public function PurgeLog() {
         try {
