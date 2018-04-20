@@ -9,7 +9,7 @@ class Honeypot {
             $this->db = new PDO('mysql:host='.DB_HOST.';dbname='.DB_DB.';charset='.DB_CHARSET, DB_USER, DB_PASS);
             $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch (PDOException $ex) {
-            print ($ex->getMessage());
+            print '<li>'.$ex->getMessage().' in '.$ex->getFile().' on line '.$ex->getLine().'</li>';
         }
     }
 
@@ -23,35 +23,49 @@ class Honeypot {
                                  ':url'=>$url,
                                  ':referrer'=>$referrer));
         } catch (PDOException $ex) {
-            print ($ex->getMessage());
+            print '<li>'.$ex->getMessage().' in '.$ex->getFile().' on line '.$ex->getLine().'</li>';
         }
     }
     
     public function CheckLog() {
         try {
-            $stmt = $this->db->prepare('SELECT ip,count(*) as hits FROM `honeypot_log` WHERE error_time > date_add(CURRENT_TIMESTAMP, INTERVAL ? minute) GROUP by ip');
+            if (MATCHING_OCTETS == 4) {
+                $iprange = 'ip as iprange';
+            }
+            elseif (MATCHING_OCTETS == 3) {
+                $iprange = "CONCAT(SUBSTRING_INDEX(SUBSTRING_INDEX(`ip`, '.',  1), '.', -1),'.',SUBSTRING_INDEX(SUBSTRING_INDEX(`ip`, '.',  2), '.', -1),'.',SUBSTRING_INDEX(SUBSTRING_INDEX(`ip`, '.',  3), '.', -1),'.*') as IPrange";
+            }
+            elseif (MATCHING_OCTETS == 2) {
+                $iprange = "CONCAT(SUBSTRING_INDEX(SUBSTRING_INDEX(`ip`, '.',  1), '.', -1),'.',SUBSTRING_INDEX(SUBSTRING_INDEX(`ip`, '.',  2), '.', -1),'.*.*') as IPrange";
+            }
+            elseif (MATCHING_OCTETS == 1) {
+                $iprange = "CONCAT(SUBSTRING_INDEX(SUBSTRING_INDEX(`ip`, '.',  1), '.', -1),'.*.*.*') as IPrange";
+            }
+
+            $query = "SELECT ".$iprange.",count(*) as hits FROM `honeypot_log` WHERE error_time > date_add(CURRENT_TIMESTAMP, INTERVAL ? minute) GROUP by iprange";
+            print "<li>$query</li>";
+            $stmt = $this->db->prepare($query);
             $minutes = 0 - CHECK_MINUTES;
             $stmt->execute(array($minutes));
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 if ($row['hits'] > BAN_THRESHOLD) {
-                    $this->BanIP($row['ip']);
+                    $this->BanIP($row['IPrange']);
                 }
             }
         } catch (PDOException $ex) {
-            print $ex->getMessage();
+            print '<li>'.$ex->getMessage().' in '.$ex->getFile().' on line '.$ex->getLine().'</li>';
         }
         
     }
 
     private function BanIP($ip) {
         try { 
-            $stmt = $this->db->prepare('INSERT INTO `honeypot_ips` (ip,location,ban_date) VALUES(?,?,?) ON DUPLICATE KEY UPDATE `ban_date` = ?');
-            $location = gethostbyaddr($ip);
+            $stmt = $this->db->prepare('INSERT IGNORE INTO `honeypot_ips` (ip,ban_date) VALUES(?,?)');
             $date = date('Y-m-d');
-            $stmt->execute(array($ip,$location,$date,$date));
+            $stmt->execute(array($ip,$date));
             print "<li>Added IP $ip to Banned list";
         } catch (PDOException $ex) {
-            print $ex->getMessage();
+            print '<li>'.$ex->getMessage().' in '.$ex->getFile().' on line '.$ex->getLine().'</li>';
         }
     }
 
@@ -61,7 +75,7 @@ class Honeypot {
             $stmt = $this->db->query('DELETE FROM `honeypot_log` WHERE DATE(error_time) = DATE(NOW() - INTERVAL 1 DAY)');
             print "<li>Yestday's Log DELETED</li>";
         } catch (PDOException $ex) { 
-            print $ex->getMessage();
+            print '<li>'.$ex->getMessage().' in '.$ex->getFile().' on line '.$ex->getLine().'</li>';
         }
     }
 }
