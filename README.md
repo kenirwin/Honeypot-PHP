@@ -26,7 +26,11 @@ $link_from = $_SERVER['HTTP_REFERER'];
 $hp = new Honeypot();
 $hp->Log($ip, $error, $url, $link_from);
 ```
-5. Set up `cron` jobs to run `check.php` every minute or so, and `purge.php` once a day
+5. Copy `conf/sample_config.php` to `conf/config.php` and fill in the appropriate MySQL configurations and desired parameters.
+   * `CHECK_MINUTES` and `BAN_THRESHOLD` work together to set the tolerances for how many logged errors to accept in a particular timeframe, according to this formula: The IP or IP range will be blocked if there more than BAN_THRESHOLD logged errors in the past CHECK_MINUTES minutes.
+   * `MATCHING_OCTETS` defines the level of specificity with IPs are matched. Each of the strings of digits in IP address is an octet. This setting defines how many octets (starting with the first) must match the string in order to be counted in the ban. Setting the value to 4 requires an exact IP match (e.g. 123.456.7.89) whereas a setting of 3 would match 123.456.7.*). I suggest setting the level at 3. 
+   * `KEEP_LOG_DAYS` tells how many days to keep the logs for when the `purge.php` script runs
+6. Set up `cron` jobs to run `check.php` every minute or so, and `purge.php` once a day
 
 ## Requirements
 
