@@ -72,8 +72,10 @@ class Honeypot {
 
     public function PurgeLog() {
         try {
-            $stmt = $this->db->query('DELETE FROM `honeypot_log` WHERE DATE(error_time) = DATE(NOW() - INTERVAL 1 DAY)');
-            print "<li>Yestday's Log DELETED</li>";
+            $stmt = $this->db->prepare('DELETE FROM `honeypot_log` WHERE DATE(error_time) < DATE(NOW() - INTERVAL ? DAY)');
+            
+            $stmt->execute(array(KEEP_LOG_DAYS));
+            print '<li>DELETED logs older than '.KEEP_LOG_DAYS.' day(s) old</li>';
         } catch (PDOException $ex) { 
             print '<li>'.$ex->getMessage().' in '.$ex->getFile().' on line '.$ex->getLine().'</li>';
         }
