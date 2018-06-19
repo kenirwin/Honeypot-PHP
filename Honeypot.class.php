@@ -49,7 +49,6 @@ class Honeypot {
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 if ($row['hits'] > BAN_THRESHOLD) {
                     $this->BanIP($row['IPrange']);
-                    $this->UpdateBlacklist();
                 }
             }
         } catch (PDOException $ex) {
@@ -80,6 +79,7 @@ class Honeypot {
             $date = date('Y-m-d');
             $stmt->execute(array($ip,$date));
             print "<li>Added IP $ip to Banned list";
+            $this->UpdateBlacklist();
         } catch (PDOException $ex) {
             print '<li>'.$ex->getMessage().' in '.$ex->getFile().' on line '.$ex->getLine().'</li>';
         }
