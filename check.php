@@ -4,4 +4,4 @@ require_once('Honeypot.class.php');
 
 $hp = new Honeypot();
 $hp->CheckLog();
-
+$hp->CheckInjectionLog();

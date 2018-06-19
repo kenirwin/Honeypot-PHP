@@ -58,6 +58,22 @@ class Honeypot {
         
     }
 
+    public function CheckInjectionLog() {
+        $file = @fopen(INJECTION_LOG, "r");
+        if ($file) {
+            while (($buffer = fgets($file, 4096)) !== false) {
+                list($leadin,$count,$ip,$other) = preg_split('/\s+/',$buffer);
+                if (intval($count) > 10) {
+                    $this->BanIP($ip);
+                }
+            }
+            if (!feof($file)) {
+                echo "Error: unexpected fgets() fail\n";
+            }
+            fclose($file);
+        }
+    }
+
     private function BanIP($ip) {
         try { 
             $stmt = $this->db->prepare('INSERT IGNORE INTO `honeypot_ips` (ip,ban_date) VALUES(?,?)');
