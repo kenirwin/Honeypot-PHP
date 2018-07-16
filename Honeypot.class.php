@@ -17,7 +17,8 @@ class Honeypot {
         $datetime = date('Y-m-d H:i:s');
         try {
             $stmt = $this->db->prepare('INSERT INTO honeypot_log(error_time,error_code,ip,target_url,referrer) VALUES (:time,:code,:ip,:url,:referrer)');
-            $stmt->execute(array(':time'=>$datetime,
+            if (! isset($referrer)) { $referrer = 'NULL'; }
+            $stmt->execute(array(':time'=>$datetime,OA
                                  ':code'=>$error,
                                  ':ip'=>$ip,
                                  ':url'=>$url,
