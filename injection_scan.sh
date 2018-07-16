@@ -7,5 +7,5 @@ source conf/config.sh
 # sort and count uniq instances
 # write it to a log
 
-egrep -i '\bUNION\b|\bSELECT\b|\bCHAR\b' $access_log | grep -v $ip_to_ignore | sed -n 's/\([0-9\.]\+\).*/\1/p' | sort | uniq -c > $injection_log
+egrep -i '\bUNION\b|\bSELECT\b|\bCHAR\b|\bNAME_CONST\b|\bUNHEX\b' $access_log | grep -v $ip_to_ignore | sed -n 's/\([0-9\.]\+\).*/\1/p' | sort | uniq -c > $injection_log
 
